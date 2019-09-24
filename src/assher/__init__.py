@@ -1,90 +1,90 @@
 #!/usr/bin/python3
 # encoding: utf8
 
-import asyncio, asyncssh, sys, os, argparse
-from time import sleep, time_ns
+import asyncio, asyncssh
 from aioqs import AIOQS
-from asyncssh.misc import DisconnectError
-from asyncssh.sftp import SFTPError
-from .conf import settings
-
-
-async def run_client(host, cmds,
-                     downloads=[], download_dir="/tmp",
-                     upload_dir="/tmp", uploads=[]):
-    if settings.debug >=2: print("Running client", time_ns())
-    try:
-        async with await asyncio.wait_for(
-            asyncssh.connect(host,
-                             username=settings.username,
-                             password=settings.password,
-                             client_keys=settings.privkey,
-                             known_hosts=None,
-                             **{}),
-            timeout=5) as conn:
-            if uploads or downloads:
-                async with await conn.start_sftp_client() as sftp:
-                    try:
-                        if uploads:
-                            await sftp.put(uploads, "/tmp/")
-                            if settings.debug:
-                                print("Copied file to remote host {}".format(host), file=sys.stderr)
-                        if downloads:
-                            await sftp.get(downloads, "/tmp/")
-                            if settings.debug:
-                                print("Copied file to remote host {}".format(host), file=sys.stderr)
-                    except SFTPError as e:
-                        print(e, host)
-            results = [await conn.run(c) for c in cmds]
-            return [host]+ [(r.stdout.strip()
-                             if r.exit_status == 0
-                             else '')
-                            for r in results]
-    except asyncio.TimeoutError: pass
-    except (
-        OSError,
-        ValueError,
-        ConnectionRefusedError,
-            ) as e:
-        return e
-    except DisconnectError as e:
-        print("Disconnected {}: {}".format(host,e))
-        return e
-#     except Exception as e:
-#         return e
-    
-
-def iter_concat(*args):
-    generator = type((i for i in range(1)))
-    for x in args:
-        if type(x) is str: yield x
-        elif type(x) in (list,tuple, generator):
-            for y in x: yield y
-        else: raise TypeError
 
     
-async def main():
-    hosts = iter_concat(*([ settings.HOSTS.get(hp, [])
-                            for hp in settings.hosts_presets] + settings.hosts))
-    cmds4exec = ( [ settings.SCRIPTS[S]
-                    for S in settings.scripts if settings.get(S) ]
-                  + settings.commands )
-#    print("USERNAME:", settings.username); exit()
-    tasks = AIOQS((run_client(host,
-                              ["hostname -s"] + cmds4exec,
-                              downloads=settings.downloads,
-                              uploads=settings.uploads)
-                   for host in hosts), limit=settings.limit)
+class Assher(object):
+    """A_SSHer
+    This class represents job for (asynchronously) run commands and exchange files on group of remote hosts by SSH.
+"""
+    __tasks__ = None
 
-    c=0
-    sc=0
-    async for t in tasks:
-        res = t.result()
-        if isinstance(res, Exception): pass #print(res)
-        elif res is not None:
-            c+=1
-            if settings.output_format == "csv":
-                print(*('"{}"'.format(r) for r in res), sep=";")
-            else:
-                print(*res)
-    print('Total', c, 'results.', file=sys.stderr)
+    def __init__(self, hosts=[], username=None, password=None, privkeys=[],
+                 commands=[], upload_dir="/tmp", uploads=[],
+                 downloads=[], download_dir="/tmp", limit=50, debug=0):
+        self.username = username
+        self.password = password
+        self.hosts = hosts
+        self.privkeys = privkeys
+        self.commands = commands
+        self.upload_dir = upload_dir
+        self.uploads = uploads
+        self.download_dir = download_dir
+        self.downloads = downloads
+        self.limit = limit
+        self.debug = debug
+
+    async def run_client(self, host):
+        results = []
+        try:
+            async with await asyncio.wait_for(
+                    asyncssh.connect(host,
+                                     username=self.username,
+                                     password=self.password,
+                                     client_keys=self.privkeys,
+                                     known_hosts=None,
+                                     **{}),
+                    timeout=5) as conn:
+                if self.uploads:
+                    async with await conn.start_sftp_client()  as sftp:
+                        if self.uploads:
+                            try:
+                                results.append(await sftp.put(uploads, "/tmp/"))
+                            except asyncssh.sftp.SFTPError as e:
+                                results.append(e)
+                                
+                results.extend([await conn.run(cmd) for cmd in self.commands])
+                        
+                if self.downloads:
+                    async with await conn.start_sftp_client()  as sftp:
+                        if self.downloads:
+                            try:
+                                results.append(
+                                    await sftp.get(downloads, "/tmp/")
+                                )
+                            except asyncssh.sftp.SFTPError as e:
+                                results.append(e)
+                            
+                return [host] + [(r.stdout.strip()
+                                 if r.exit_status == 0
+                                 else '')
+                                for r in results]
+            
+        except (asyncio.TimeoutError,
+                OSError,
+                ValueError,
+                ConnectionRefusedError,
+                asyncssh.misc.DisconnectError) as e:
+            return e
+    
+
+    async def __aenter__(self):
+        return self
+
+
+    async def __aexit__(self):
+        self.__tasks__.__aexit__()
+
+
+    def __aiter__(self):
+        self.__tasks__ = AIOQS(
+            (self.run_client(host) for host in self.hosts), # Tasks generator
+            limit=self.limit
+        ).__aiter__()
+        return self
+
+
+    async def __anext__(self):
+        return await self.__tasks__.__anext__()
