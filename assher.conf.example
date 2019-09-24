@@ -1,0 +1,33 @@
+# Presets of hosts
+"HOSTS": {
+    "test": "127.0.0.1",
+    # A list of hosts.
+    "test2": ["127.0.1.1", "test.example.com", "some.other.host.net"],
+    # Subset of addresses for serveral subnets in python's list comprehension syntax.
+    "ALL_SRVS": ['192.168.{}.{}'.format(n,i)     
+                for n in (100, 200+1)
+                for i in range(10,255)],
+},
+
+# Presets of scripts with some usefull examples.
+"SCRIPTS": {
+    # Returns list of installed packages with their versions rolled up in one line
+    # by awk with fields separated by OFS and rows separated by ORS.
+    "pkg_versions": """dpkg -l linux-image* | grep ^ii | awk '{ORS="\t"}{OFS="-"}{print $2, $3}'""",
+    # You can write pretty complicated multiline scripts using python's raw strings or tripple of double-quoted strings
+    "dist_upgrade": """export DISTRIB="buster";
+cat <<< "EOF" >> /etc/apt/sources.list
+deb http://mirror.yandex.ru/debian/ ${DISTRIB} main contrib non-free
+deb-src http://ftp.debian.org/debian/ ${DISTRIB} main contrib
+
+deb http://security.debian.org/ ${DISTRIB}/updates main
+deb-src http://security.debian.org/ ${DISTRIB}/updates main
+EOF
+apt update && apt -y dist-upgrade"
+""",
+    "update_pkgs": "apt update && apt -y upgrade",
+    "start_service": "sudo systemctl start nginx",
+    "stop_service": "sudo systemctl stop nginx",
+},
+"username": "root",
+"password": "-",	# Ask password from stdin.

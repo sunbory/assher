@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="assher",
-    version="0.2.0",
+    version="0.7",
     author="Oleg Marin",
     author_email="wWolfovich@gmail.com",
     description="Async SSH/SFTP massive runner",
