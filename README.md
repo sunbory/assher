@@ -8,7 +8,7 @@ python3 -m pip install assher
 ```
 
 ## Usage as command-line utility
-You cat see help by running
+You can see help by running
 ```sh
 python3 -m assher --help
 ```

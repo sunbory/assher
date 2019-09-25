@@ -11,17 +11,15 @@ setup(
     description="Async SSH/SFTP massive runner",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/wWolfovich/aioqs",
+    url="https://github.com/wWolfovich/assher",
     packages=find_packages("src"),
     package_dir={"": "src"},
-    install_requires=[
-        "asyncssh>=1.12.0",
-        "aioqs>=0.5.5",
-        ],
+    python_requires='>=3.6',
+    install_requires=["asyncssh>=1.12.0", "aioqs>=0.5.5"],
     keywords="AIO async SSH SFTP aioqs",
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: Apache Software License"
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
 )
