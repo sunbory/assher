@@ -31,12 +31,12 @@ params.add_argument('-H', "--hosts-presets", type=str, nargs="+",
                     choices=settings.HOSTS,
                     default=[],
                     help="List of target hosts by preset name")
-params.add_argument("--hosts", nargs="+", metavar='T', default=[],
+params.add_argument("--hosts", nargs="+", metavar='H', default=[],
                     help="List of target hosts by hostname")
 params.add_argument('-i', "--privkey", metavar="PK", nargs='+',
                     default=[os.path.expanduser("~/.ssh/id_rsa")],
                     help="Path to SSH private key to use for connetions. It is possible to set several keys.")
-params.add_argument('-L', "--limit", type=int, default=10, metavar='N',
+params.add_argument('-L', "--limit", type=int, default=1, metavar='N',
                     help="Sets number of workers. Missing option or 0 means unlimited. BUT UNLIMITED EXECUTION NOT YET SUPPORTED, IT HANGS!")
 params.add_argument('-p', "--proxy", nargs="+",
                     help="List of routers to proxy connections through.")
@@ -125,7 +125,7 @@ async def main():
         downloads=settings.downloads,
         upload_dir=settings.upload_dir,
         uploads=settings.uploads,
-        limit=50)
+        limit=settings.limit)
 
     c=0
     async for t in assher:

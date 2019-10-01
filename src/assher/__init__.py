@@ -11,19 +11,21 @@ class Assher(object):
 """
     __tasks__ = None
 
-    def __init__(self, hosts=[], username=None, password=None, privkeys=[],
+    def __init__(self, hosts=[], port=22,
+                 username=None, password=None, privkeys=[],
                  commands=[], upload_dir="/tmp", uploads=[],
-                 downloads=[], download_dir="/tmp", limit=50, debug=0):
+                 downloads=[], download_dir="/tmp", limit=None, debug=0):
         self.username = username
         self.password = password
         self.hosts = hosts
+        self.port = port
         self.privkeys = privkeys
         self.commands = commands
         self.upload_dir = upload_dir
         self.uploads = uploads
         self.download_dir = download_dir
         self.downloads = downloads
-        self.limit = limit
+        self.limit = limit if limit else 0
         self.debug = debug
 
     async def run_client(self, host):
@@ -31,6 +33,7 @@ class Assher(object):
         try:
             async with await asyncio.wait_for(
                     asyncssh.connect(host,
+                                     port=self.port,
                                      username=self.username,
                                      password=self.password,
                                      client_keys=self.privkeys,
