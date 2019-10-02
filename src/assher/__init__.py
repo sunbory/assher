@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # encoding: utf8
 
+__version__ = "0.7.5"
 import asyncio, asyncssh
 from aioqs import AIOQS
 
@@ -11,10 +12,19 @@ class Assher(object):
 """
     __tasks__ = None
 
-    def __init__(self, hosts=[], port=22,
-                 username=None, password=None, privkeys=[],
-                 commands=[], upload_dir="/tmp", uploads=[],
-                 downloads=[], download_dir="/tmp", limit=None, debug=0):
+    def __init__(self, hosts=[],
+                 port=22,
+                 username=None,
+                 password=None,
+                 privkeys=[],
+                 commands=[],
+                 upload_dir="/tmp",
+                 uploads=[],
+                 downloads=[],
+                 download_dir="/tmp",
+                 limit=0,
+                 timeout=5,
+                 debug=0):
         self.username = username
         self.password = password
         self.hosts = hosts
@@ -25,21 +35,28 @@ class Assher(object):
         self.uploads = uploads
         self.download_dir = download_dir
         self.downloads = downloads
-        self.limit = limit if limit else 0
+        self.limit = limit
+        self.timeout = timeout
         self.debug = debug
 
     async def run_client(self, host):
         results = []
+        conparams = {
+            "host": host,
+            "port": self.port,
+            "username": self.username,
+            "password": self.password,
+        }
+        conparams.update(host_url_parse(host))
+        host = conparams.pop("host")
+
         try:
             async with await asyncio.wait_for(
                     asyncssh.connect(host,
-                                     port=self.port,
-                                     username=self.username,
-                                     password=self.password,
                                      client_keys=self.privkeys,
                                      known_hosts=None,
-                                     **{}),
-                    timeout=5) as conn:
+                                     **conparams),
+                    timeout=self.timeout) as conn:
                 if self.uploads:
                     async with await conn.start_sftp_client()  as sftp:
                         if self.uploads:
@@ -71,7 +88,7 @@ class Assher(object):
                 ConnectionRefusedError,
                 asyncssh.misc.DisconnectError) as e:
             return e
-    
+
 
     async def __aenter__(self):
         return self
@@ -91,3 +108,24 @@ class Assher(object):
 
     async def __anext__(self):
         return await self.__tasks__.__anext__()
+
+
+def host_url_parse(host_url):
+    d = {}
+    if "@" not in host_url and ":" in host_url:
+        d["host"] = host_url
+        return d
+
+    url_parts = host_url.split("@")
+    if len(url_parts) == 2:
+        us, hs = url_parts
+        if us:
+            u = us.split(":")
+            d["username"] = u.pop(0)
+            if u:
+                d["password"] = ':'.join(u)
+    else: hs = url_parts[0]
+    h = hs.split(':')
+    d["host"] = h.pop(0)
+    if h: d["port"] = int(h.pop(0))
+    return d

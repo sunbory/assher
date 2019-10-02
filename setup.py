@@ -5,7 +5,7 @@ with open("README.md", "r") as rf:
     
 setup(
     name="assher",
-    version="0.7",
+    version="0.7.5",
     author="Oleg Marin",
     author_email="wWolfovich@gmail.com",
     description="Async SSH/SFTP massive runner",
