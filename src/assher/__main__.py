@@ -31,17 +31,20 @@ params.add_argument('-H', "--hosts-presets", type=str, nargs="+",
                     choices=settings.HOSTS,
                     default=[],
                     help="List of target hosts by preset name")
-params.add_argument("--hosts", nargs="+", metavar='T', default=[],
+params.add_argument("--hosts", nargs="+", metavar='host', default=[],
                     help="List of target hosts by hostname")
 params.add_argument('-i', "--privkey", metavar="PK", nargs='+',
                     default=[os.path.expanduser("~/.ssh/id_rsa")],
                     help="Path to SSH private key to use for connetions. It is possible to set several keys.")
 params.add_argument('-L', "--limit", type=int, default=10, metavar='N',
                     help="Sets number of workers. Missing option or 0 means unlimited. BUT UNLIMITED EXECUTION NOT YET SUPPORTED, IT HANGS!")
-params.add_argument('-p', "--proxy", nargs="+",
-                    help="List of routers to proxy connections through.")
+params.add_argument('-p', "--port", type=int, default=22, metavar='P',
+                    help="Port to connecto to SSH on remote host.")
 params.add_argument('-P', "--password", nargs='?',
                     help="Password for remote ssh connections. If special value \"-\" used, password will be prompted from stdandard input.")
+params.add_argument('-t', "--timeout", type=float, nargs="?", default=5,
+                    help="Connection timeout.")
+params.add_argument('-T', "--tunnel", help="Open tunnel through coonections described before option for connections described after this option. Multiple use of option (with multiple blocks of hosts obviously) allowed.")
 params.add_argument('-U', "--username", nargs='?', default=getuser(),
                     help="Username to use for login to remote hosts. By defautl username of calling user.")
 params.add_argument('-u', "--uploads", nargs='+', metavar="UL", default=[],
@@ -64,7 +67,7 @@ def iter_concat(*args):
 
 def read_conf_file(config_file_path, ns):
     gns = {
-        "__builtins__":{k:v for k,v in __builtins__.items()
+        "__builtins__": {k:v for k,v in __builtins__.__dict__.items()
                         if k not in ("compile",
                                      "open",
                                      "exec",
@@ -74,7 +77,7 @@ def read_conf_file(config_file_path, ns):
         }
     try:
         with open(config_file_path, 'r') as cf:
-            d=eval("{{{}}}".format(cf.read().strip()), gns)
+            d=eval("{{{}\n}}".format(cf.read().strip()), gns)
             print(*d)
             ns.__dict__.update(
                 {k:v for k,v in d.items()
@@ -91,7 +94,7 @@ async def main():
     cmdline_arguments = params.parse_args()
     # Updating settings from command line making it prefered over config file
     if os.access(cmdline_arguments.config_file, os.R_OK):
-        read_conf_file(arguments.config_file, settings)
+        read_conf_file(cmdline_arguments.config_file, settings)
     elif cmdline_arguments.config_file != settings.config_file:
         print("No such file or directory:", cmdline_arguments.config_file,
               file=sys.stderr)
@@ -99,8 +102,8 @@ async def main():
 
     settings.__dict__.update({k:v for k,v in cmdline_arguments.__dict__.items()
                               if not params.get_default(k) == v})
-    
-    if settings.downloads or settings.uploads or settings.proxy:
+
+    if settings.downloads or settings.uploads or settings.tunnel:
         print('Some of used options not implemented yet!', file=sys.stderr)
         exit()
     
@@ -115,6 +118,7 @@ async def main():
             [ settings.HOSTS.get(hp, [])
               for hp in settings.hosts_presets]
             + settings.hosts)),
+        port=settings.port,
         username=settings.username,
         password=settings.password,
         privkeys=settings.privkey,
@@ -125,7 +129,7 @@ async def main():
         downloads=settings.downloads,
         upload_dir=settings.upload_dir,
         uploads=settings.uploads,
-        limit=50)
+        limit=settings.limit)
 
     c=0
     async for t in assher:
