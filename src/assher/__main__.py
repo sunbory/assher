@@ -134,7 +134,7 @@ async def main():
     c=0
     async for t in assher:
         res = t.result()
-        if isinstance(res, Exception): pass
+        if isinstance(res[1], Exception): pass
         elif res is not None:
             c+=1
             if settings.output_format == "csv":

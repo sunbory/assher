@@ -87,7 +87,7 @@ class Assher(object):
                 ValueError,
                 ConnectionRefusedError,
                 asyncssh.misc.DisconnectError) as e:
-            return e
+            return host, e
 
 
     async def __aenter__(self):
