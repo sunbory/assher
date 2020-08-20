@@ -22,6 +22,8 @@ class Assher(object):
                  uploads=[],
                  downloads=[],
                  download_dir="/tmp",
+                 su=False,
+                 supasswd=None,
                  limit=0,
                  timeout=5,
                  debug=0):
@@ -38,6 +40,8 @@ class Assher(object):
         self.limit = limit
         self.timeout = timeout
         self.debug = debug
+        if su:
+            self.commands = ["su root", supasswd] + self.commands
 
     async def run_client(self, host):
         results = []
