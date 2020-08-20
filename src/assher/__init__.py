@@ -65,7 +65,7 @@ class Assher(object):
                     async with await conn.start_sftp_client()  as sftp:
                         if self.uploads:
                             try:
-                                results.append(await sftp.put(uploads, "/tmp/"))
+                                results.append(await sftp.put(uploads, self.upload_dir))
                             except asyncssh.sftp.SFTPError as e:
                                 results.append(e)
                                 
@@ -76,7 +76,7 @@ class Assher(object):
                         if self.downloads:
                             try:
                                 results.append(
-                                    await sftp.get(downloads, "/tmp/")
+                                    await sftp.get(downloads, self.download_dir)
                                 )
                             except asyncssh.sftp.SFTPError as e:
                                 results.append(e)
