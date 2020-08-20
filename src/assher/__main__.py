@@ -51,6 +51,10 @@ params.add_argument('-u', "--uploads", nargs='+', metavar="UL", default=[],
                     help="List of files to upload.")
 params.add_argument("--upload-dir", nargs='?', default="/tmp",
                     help="Path on remote host to upload selected files")
+params.add_argument("--su", action="store_true",
+                    help="Run commands with root privilege using su")
+params.add_argument("--supasswd", nargs='?',
+                    help="Password for su root. If special value \"-\" used, password will be prompted from stdandard input.")
 
 # Set defaults
 params.parse_args([],settings)
@@ -112,6 +116,13 @@ async def main():
     except (EOFError, KeyboardInterrupt):
         print()
         exit(1)
+        
+    try:
+        if setting.su and settings.supasswd == '-': 
+            settings.supasswd = getpass("Password of Root: ")
+    except (EOFError, KeyboardInterrupt):
+        print()
+        exit(1)
     
     assher = Assher(
         hosts=iter_concat(*(
@@ -129,7 +140,9 @@ async def main():
         downloads=settings.downloads,
         upload_dir=settings.upload_dir,
         uploads=settings.uploads,
-        limit=settings.limit)
+        limit=settings.limit,
+        su=setting.su,
+        supasswd=setting.supasswd)
 
     c=0
     async for t in assher:
