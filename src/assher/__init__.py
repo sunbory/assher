@@ -64,22 +64,24 @@ class Assher(object):
                 if self.uploads:
                     async with await conn.start_sftp_client()  as sftp:
                         if self.uploads:
-                            try:
-                                results.append(await sftp.put(self.uploads, self.upload_dir, preserve=True, recurse=True))
-                            except asyncssh.sftp.SFTPError as e:
-                                results.append(e)
+                            await sftp.put(self.uploads, self.upload_dir, preserve=True, recurse=True)
+#                             try:
+#                                 results.append(await sftp.put(self.uploads, self.upload_dir, preserve=True, recurse=True))
+#                             except asyncssh.sftp.SFTPError as e:
+#                                 results.append(e)
                                 
                 results.extend([await conn.run(cmd) for cmd in self.commands])
                         
                 if self.downloads:
                     async with await conn.start_sftp_client()  as sftp:
                         if self.downloads:
-                            try:
-                                results.append(
-                                    await sftp.get(self.downloads, self.download_dir, preserve=True, recurse=True)
-                                )
-                            except asyncssh.sftp.SFTPError as e:
-                                results.append(e)
+                            await sftp.get(self.downloads, self.download_dir, preserve=True, recurse=True)
+#                             try:
+#                                 results.append(
+#                                     await sftp.get(self.downloads, self.download_dir, preserve=True, recurse=True)
+#                                 )
+#                             except asyncssh.sftp.SFTPError as e:
+#                                 results.append(e)
                             
                 return [host] + [(r.stdout.strip()
                                  if r.exit_status == 0
@@ -90,7 +92,8 @@ class Assher(object):
                 OSError,
                 ValueError,
                 ConnectionRefusedError,
-                asyncssh.misc.DisconnectError) as e:
+                asyncssh.misc.DisconnectError,
+                asyncssh.sftp.SFTPError) as e:
             return host, e
 
 
