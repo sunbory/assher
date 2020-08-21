@@ -118,7 +118,7 @@ async def main():
         exit(1)
         
     try:
-        if setting.su and settings.supasswd == '-': 
+        if settings.su and settings.supasswd == '-': 
             settings.supasswd = getpass("Password of Root: ")
     except (EOFError, KeyboardInterrupt):
         print()
