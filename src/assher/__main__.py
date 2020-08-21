@@ -107,7 +107,7 @@ async def main():
     settings.__dict__.update({k:v for k,v in cmdline_arguments.__dict__.items()
                               if not params.get_default(k) == v})
 
-    if settings.downloads or settings.uploads or settings.tunnel:
+    if settings.tunnel:
         print('Some of used options not implemented yet!', file=sys.stderr)
         exit()
     
