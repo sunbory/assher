@@ -141,8 +141,8 @@ async def main():
         upload_dir=settings.upload_dir,
         uploads=settings.uploads,
         limit=settings.limit,
-        su=setting.su,
-        supasswd=setting.supasswd)
+        su=settings.su,
+        supasswd=settings.supasswd)
 
     c=0
     async for t in assher:
