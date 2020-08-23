@@ -74,7 +74,8 @@ class Assher(object):
                                 
                 if self.su:
                     result = ""
-                    async with conn.create_process('su - root') as process:
+                    async with conn.create_process() as process:
+                        process.stdin.write('su - root \n')
                         await process.stdout.read()
                         process.stdin.write(self.supasswd + '\n')
                         await process.stdout.read()
