@@ -40,8 +40,10 @@ class Assher(object):
         self.limit = limit
         self.timeout = timeout
         self.debug = debug
-        if su:
-            self.commands = ["su root", supasswd] + self.commands
+        self.su = su
+        self.supasswd = supasswd
+#         if su:
+#             self.commands = ["su root", supasswd] + self.commands
 
     async def run_client(self, host):
         results = []
@@ -70,7 +72,18 @@ class Assher(object):
 #                             except asyncssh.sftp.SFTPError as e:
 #                                 results.append(e)
                                 
-                results.extend([await conn.run(cmd, timeout=self.timeout) for cmd in self.commands])
+                if self.su:
+                    result = ""
+                    async with conn.create_process('su - root') as process:
+                        await process.stdout.readline()
+                        process.stdin.write(self.supasswd + '\n')
+                        await process.stdout.readline()
+                        for cmd in self.commands:
+                            process.stdin.write(cmd + '\n')
+                            result = result + await process.stdout.readline()
+                        results.extend(result)
+                else:
+                    results.extend([await conn.run(cmd, timeout=self.timeout) for cmd in self.commands])
                         
                 if self.downloads:
                     async with await conn.start_sftp_client()  as sftp:
