@@ -75,14 +75,19 @@ class Assher(object):
                 if self.su:
                     result = ""
                     async with conn.create_process() as process:
-                        process.stdin.write('su - root \n')
-                        await process.stdout.read()
+                        process.stdin.write('su - root || exit 1 \n')
+                        await asyncio.sleep(0.1)
                         process.stdin.write(self.supasswd + '\n')
-                        await process.stdout.read()
+                        await asyncio.sleep(0.1)
+                        process.stdin.write('rrretcode=$?; [ $rrretcode -eq 0 ] || exit $rrretcode \n')
+                        
                         for cmd in self.commands:
                             process.stdin.write(cmd + '\n')
-                            result = result + await process.stdout.read()
-                        results.extend(result)
+                            await asyncio.sleep(0.1)
+                        process.stdin.write('exit \n')
+                        process.stdin.write('exit \n')
+                        
+                        results.extend(process.wait(timeout=self.timeout))
                 else:
                     results.extend([await conn.run(cmd, timeout=self.timeout) for cmd in self.commands])
                         
