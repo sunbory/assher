@@ -70,7 +70,7 @@ class Assher(object):
 #                             except asyncssh.sftp.SFTPError as e:
 #                                 results.append(e)
                                 
-                results.extend([await conn.run(cmd) for cmd in self.commands])
+                results.extend([await conn.run(cmd, timeout=self.timeout) for cmd in self.commands])
                         
                 if self.downloads:
                     async with await conn.start_sftp_client()  as sftp:
