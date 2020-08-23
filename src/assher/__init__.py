@@ -75,12 +75,12 @@ class Assher(object):
                 if self.su:
                     result = ""
                     async with conn.create_process('su - root') as process:
-                        await process.stdout.readline()
+                        await process.stdout.read()
                         process.stdin.write(self.supasswd + '\n')
-                        await process.stdout.readline()
+                        await process.stdout.read()
                         for cmd in self.commands:
                             process.stdin.write(cmd + '\n')
-                            result = result + await process.stdout.readline()
+                            result = result + await process.stdout.read()
                         results.extend(result)
                 else:
                     results.extend([await conn.run(cmd, timeout=self.timeout) for cmd in self.commands])
