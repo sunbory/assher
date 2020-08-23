@@ -141,6 +141,7 @@ async def main():
         upload_dir=settings.upload_dir,
         uploads=settings.uploads,
         limit=settings.limit,
+        timeout=settings.timeout,
         su=settings.su,
         supasswd=settings.supasswd)
 
