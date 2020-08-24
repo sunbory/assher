@@ -87,7 +87,7 @@ class Assher(object):
                         process.stdin.write('exit \n')
                         process.stdin.write('exit \n')
                         
-                        results.extend(process.wait(timeout=self.timeout))
+                        results.extend(await process.wait(timeout=self.timeout))
                 else:
                     results.extend([await conn.run(cmd, timeout=self.timeout) for cmd in self.commands])
                         
